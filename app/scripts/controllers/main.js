@@ -91,12 +91,12 @@ angular.module('helloWorldPaymentsApp')
       }
       
       // prepare payment and find viable paths
-      $http({method: 'GET', url: pathURL}).
+      $http.get(pathURL).
         success(function(data, status, headers, config) {
           path = data.payments[0];
 
           // generate UUID for transaction ID, unique for every transaction
-          $http({method: 'GET', url: uuidURL}).
+          $http.get(uuidURL).
             success(function(data, status, headers, config) {
               uuid = data.uuid;
               sendData = {
@@ -106,14 +106,11 @@ angular.module('helloWorldPaymentsApp')
               };
               
               // send payment
-              $http({
-                method: 'POST',
-                url: sendURL,
-                data: sendData}).
+              $http.post(sendURL, sendData).
                 success(function(data, status, headers, config) {
 
                   // confirm payment
-                  $http({method: 'GET', url: confirmURL + uuid}).
+                  $http.get(confirmURL + uuid).
                     success(function(data, status, headers, config) {
                       console.log('SUCCESS!', data);
                     }).
