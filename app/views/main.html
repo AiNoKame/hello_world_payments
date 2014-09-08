@@ -15,7 +15,7 @@
       </div>
     </form>
   </div>
-  <p ng-show="startError" ng-model=startErrorMessage class="text-danger">{{ startErrorMessage }}</p>
+  <p ng-model=startErrorMessage class="text-danger">{{ startErrorMessage }}</p>
 
   <!-- Account Information Panel -->
   <div ng-show="started">
@@ -33,12 +33,15 @@
         <label>to</label>
         <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control" required>
       </div>
+      <br />
+      <br />
       <div class="form-group">
         <label>My secret is</label>
         <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control" required>
       </div>
       <button type="submit" class="btn btn-primary">Send</button>
     </form>
+    <p ng-model=paymentErrorMessage class="text-danger">{{ paymentErrorMessage }}</p>
 
     <!-- Wallet Address -->
     <h3 class="text-primary" ng-model="rippleAddress">

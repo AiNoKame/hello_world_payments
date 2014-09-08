@@ -42,9 +42,9 @@ angular.module('helloWorldPaymentsApp')
     $scope.started = false;
 
     // for invalid wallet login
-    $scope.startError = false;
     $scope.startErrorMessage = '';
-    
+    $scope.paymentErrorMessage = '';
+
     // required for payment submission POST
     $scope.rippleSecret = '';
     $scope.balances = [];
@@ -56,9 +56,8 @@ angular.module('helloWorldPaymentsApp')
     };
 
     var _handleStartError = function(message) {
-      $scope.startError = true;
       $scope.startErrorMessage = message;
-      localStorageService.set('rippleAddress', '')
+      $scope.rippleAddress = '';
     }
 
     // will not start unless account has balances and transactions
@@ -72,7 +71,7 @@ angular.module('helloWorldPaymentsApp')
           $http.get(baseURL + '/payments').
             success(function(data, status, headers, config) {
               $scope.started = true;
-              $scope.startError = false;
+              $scope.startErrorMessage = '';
               $scope.transactions = data.payments;
             }).
             error(function(data) {
@@ -101,12 +100,12 @@ angular.module('helloWorldPaymentsApp')
       
       // prepare payment and find viable paths
       $http.get(pathURL).
-        success(function(data, status, headers, config) {
+        success(function(data) {
           path = data.payments[0];
 
           // generate UUID for transaction ID, unique for every transaction
           $http.get(uuidURL).
-            success(function(data, status, headers, config) {
+            success(function(data) {
               uuid = data.uuid;
               sendData = {
                 client_resource_id: uuid,
@@ -116,20 +115,27 @@ angular.module('helloWorldPaymentsApp')
               
               // send payment
               $http.post(sendURL, sendData).
-                success(function(data, status, headers, config) {
+                success(function() {
 
                   // confirm payment
                   // $http.get(confirmURL + uuid).
                   //   success(function(data, status, headers, config) {
                   //     console.log('SUCCESS!', data);
                   //   }).
-                  //   error(function(data, status, headers, config) {});
+                  //   error(function(data) {
+                  //     $scope.paymentErrorMessage = data.message;
+                  // });
                 }).
-                error(function(data,status, headers, config) {
+                error(function(data) {
+                  $scope.paymentErrorMessage = data.message;
                 });
             }).
-            error(function(data, status, headers, config) {});
+            error(function(data) {
+              $scope.paymentErrorMessage = data.message;
+            });
       }).
-      error(function(data, status, headers, config) {});
+      error(function(data) {
+        $scope.paymentErrorMessage = data.message;
+      });
     };
   }]);
