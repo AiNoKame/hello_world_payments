@@ -6,15 +6,16 @@
       <div class="row">
         <h2 class="text-primary">What is your ripple address?</h2>
         <div class="input-group">
-          <input type="text" ng-model="rippleAddress" autofocus="true" placeholder="Example: r123456789abcdefghijklmnopqrstuvwxyz" class="form-control">
-          <span class="input-group-btn">
+          <input type="text" ng-model="rippleAddress" autofocus="true" 
+            placeholder="Example: r123456789abcdefghijklmnopqrstuvwxyz" class="form-control" required>
+          <span class="input-group-btn" required>
             <input type="submit" class="btn btn-primary" value="Start">
           </span>
         </div>
       </div>
     </form>
   </div>
-  <p ng-show="startError">This ripple address is invalid. Please try again.</p>
+  <p ng-show="startError" ng-model=startErrorMessage class="text-danger">{{ startErrorMessage }}</p>
 
   <!-- Account Information Panel -->
   <div ng-show="started">
@@ -23,18 +24,18 @@
     <form class="form-inline" ng-submit="sendPayment()">
       <div class="form-group">
         <label>I want to send</label>
-        <input type="text" ng-model="payment.amount" autofocus="true" placeholder="0.0001" class="form-control">
+        <input type="text" ng-model="payment.amount" autofocus="true" placeholder="0.0001" class="form-control" required>
       </div>
       <div class="form-group">
-        <input type="text" ng-model="payment.currency" placeholder="XRP" class="form-control">
+        <input type="text" ng-model="payment.currency" placeholder="XRP" class="form-control" required>
       </div>
       <div class="form-group">
         <label>to</label>
-        <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control">
+        <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control" required>
       </div>
       <div class="form-group">
         <label>My secret is</label>
-        <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control">
+        <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control" required>
       </div>
       <button type="submit" class="btn btn-primary">Send</button>
     </form>

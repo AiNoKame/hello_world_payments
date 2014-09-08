@@ -12,7 +12,8 @@ angular.module('helloWorldPaymentsApp')
     function ($scope, $http, localStorageService) {
     var hostname = 'http://localhost',
         port = '5990',
-        socketAddress = hostname + ':' + port + '/v1';
+        socketAddress = hostname + ':' + port + '/v1',
+        baseURL;
     
     var issuer = {
       'AUD': 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B', // BitStamp
@@ -37,43 +38,51 @@ angular.module('helloWorldPaymentsApp')
       localStorageService.set('rippleAddress', newAddress);
     });
 
-    var baseURL = socketAddress + '/accounts/' + $scope.rippleAddress;
-
     // ng-show conditional to split start prompt and wallet info
     $scope.started = false;
 
     // for invalid wallet login
     $scope.startError = false;
+    $scope.startErrorMessage = '';
     
     // required for payment submission POST
     $scope.rippleSecret = '';
-    $scope.balances = []; // [{currency, value}, ...]
-    $scope.transactions = []; // potential payment paths
+    $scope.balances = [];
+    $scope.transactions = [];
     $scope.payment = {
       amount: '',
       currency: '',
       destination_account: ''
     };
 
-    // will not start unless account has balances and/or transactions
+    var _handleStartError = function(message) {
+      $scope.startError = true;
+      $scope.startErrorMessage = message;
+      localStorageService.set('rippleAddress', '')
+    }
+
+    // will not start unless account has balances and transactions
     $scope.start = function() {
+      baseURL = socketAddress + '/accounts/' + $scope.rippleAddress;
+
       $http.get(baseURL + '/balances').
         success(function(data, status, headers, config) {
-          $scope.started = true;
           $scope.balances = data.balances;
+          
+          $http.get(baseURL + '/payments').
+            success(function(data, status, headers, config) {
+              $scope.started = true;
+              $scope.startError = false;
+              $scope.transactions = data.payments;
+            }).
+            error(function(data) {
+              _handleStartError(data.message);
+            });
         }).
-        error(function(data, status, headers, config) {
-          $scope.startError = true;
+        error(function(data) {
+          _handleStartError(data.message);
         });
 
-      $http.get(baseURL + '/payments').
-        success(function(data, status, headers, config) {
-          $scope.started = true;
-          $scope.transactions = data.payments;
-        }).
-        error(function(data, status, headers, config) {
-          $scope.startError = true;
-        });
     };
 
     // one shot volley to prepare, send, and confirm payment
@@ -110,13 +119,14 @@ angular.module('helloWorldPaymentsApp')
                 success(function(data, status, headers, config) {
 
                   // confirm payment
-                  $http.get(confirmURL + uuid).
-                    success(function(data, status, headers, config) {
-                      console.log('SUCCESS!', data);
-                    }).
-                    error(function(data, status, headers, config) {});
+                  // $http.get(confirmURL + uuid).
+                  //   success(function(data, status, headers, config) {
+                  //     console.log('SUCCESS!', data);
+                  //   }).
+                  //   error(function(data, status, headers, config) {});
                 }).
-                error(function(data,status, headers, config) {});
+                error(function(data,status, headers, config) {
+                });
             }).
             error(function(data, status, headers, config) {});
       }).
