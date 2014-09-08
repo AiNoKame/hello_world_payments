@@ -1,0 +1,90 @@
+<div class="container">
+
+  <!-- Ripple Address Input -->
+  <div ng-show="!started">
+    <form role="form" ng-submit="start()">
+      <div class="row">
+        <h2 class="text-primary">What is your ripple address?</h2>
+        <div class="input-group">
+          <input type="text" ng-model="rippleAddress" autofocus="true" placeholder="Example: r123456789abcdefghijklmnopqrstuvwxyz" class="form-control">
+          <span class="input-group-btn">
+            <input type="submit" class="btn btn-primary" value="Start">
+          </span>
+        </div>
+      </div>
+    </form>
+  </div>
+  <p ng-show="startError">This ripple address is invalid. Please try again.</p>
+
+  <!-- Account Information Panel -->
+  <div ng-show="started">
+
+    <!-- Send Money (amount, currency, destination ripple wallet address) -->
+    <form class="form-inline" ng-submit="sendPayment()">
+      <div class="form-group">
+        <label>I want to send</label>
+        <input type="text" ng-model="payment.amount" autofocus="true" placeholder="0.0001" class="form-control">
+      </div>
+      <div class="form-group">
+        <input type="text" ng-model="payment.currency" placeholder="XRP" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>to</label>
+        <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>My secret is</label>
+        <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control">
+      </div>
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+
+    <!-- Wallet Address -->
+    <h3 class="text-primary" ng-model="rippleAddress">
+      Ripple Wallet Address <small>{{ rippleAddress }}</small>
+    </h3>
+
+    <!-- List of Balances -->
+    <h3 class="text-primary">Balances</h3>
+    <table class="table table-condensed">
+      <thead>
+        <tr>
+          <th>Currency</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="balance in balances">
+          <td>{{ balance.currency }}</td>
+          <td>{{ balance.value }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+
+    <!-- List of Transactions -->
+    <h3 class="text-primary">Transactions</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Source Address</th>
+          <th>Currency</th>
+          <th>Amount</th>
+          <th>Issuer</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="transaction in transactions">
+          <td>{{ transaction.payment.timestamp }}</td>
+          <td>{{ transaction.payment.source_account }}</td>
+          <td>{{ transaction.payment.destination_amount.currency }}</td>
+          <td>{{ transaction.payment.destination_amount.value }}</td>
+          <td>{{ transaction.payment.destination_amount.issuer }}</td>
+          <td>{{ transaction.payment.state }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
