@@ -41,57 +41,54 @@ angular.module('helloWorldPaymentsApp')
     // ng-show conditional to split start prompt and wallet info
     $scope.started = false;
 
-    // for invalid wallet login
     $scope.startErrorMessage = '';
     $scope.paymentErrorMessage = '';
+    $scope.paymentSuccessMessage = '';
+
+    $scope.balances = [];
+    $scope.transactions = [];
 
     // required for payment submission POST
     $scope.rippleSecret = '';
-    $scope.balances = [];
-    $scope.transactions = [];
     $scope.payment = {
       amount: '',
       currency: '',
       destination_account: ''
     };
 
-    var _handleStartError = function(message) {
-      $scope.startErrorMessage = message;
-      $scope.rippleAddress = '';
-    }
-
     // will not start unless account has balances and transactions
     $scope.start = function() {
       baseURL = socketAddress + '/accounts/' + $scope.rippleAddress;
 
-      $http.get(baseURL + '/balances').
-        success(function(data, status, headers, config) {
-          $scope.balances = data.balances;
-          
-          $http.get(baseURL + '/payments').
-            success(function(data, status, headers, config) {
-              $scope.started = true;
-              $scope.startErrorMessage = '';
-              $scope.transactions = data.payments;
-            }).
-            error(function(data) {
-              _handleStartError(data.message);
-            });
-        }).
-        error(function(data) {
-          _handleStartError(data.message);
-        });
+      $http.get(baseURL + '/balances')
+        .then(function(response) {
 
+          $scope.balances = response.data.balances;
+          
+          return $http.get(baseURL + '/payments');
+        })
+        .then(function(response) {
+          $scope.started = true;
+          $scope.startErrorMessage = '';
+          $scope.transactions = response.data.payments;
+        })
+        .catch(function(error) {
+          $scope.startErrorMessage = error.data.message;
+          $scope.rippleAddress = '';
+        });
     };
 
     // one shot volley to prepare, send, and confirm payment
     $scope.sendPayment = function() {
-      var uuid, path, sendData;
+      var uuid, message, path, sendData;
       var pathURL = baseURL + '/payments/paths/' + $scope.payment.destination_account + 
                     '/' + $scope.payment.amount + '+' + $scope.payment.currency;
       var uuidURL = socketAddress + '/uuid';
       var sendURL = socketAddress + '/payments';
-      var confirmURL = baseURL + '/payments/'; // incomplete - requires hash or uuid/client_resource_id
+      var confirmURL = baseURL + '/payments/'; // append hash or uuid/client_resource_id
+
+      $scope.paymentSuccessMessage = '';
+      $scope.paymentErrorMessage = '';
 
       // add issuer if currency is not XRP
       if ($scope.payment.currency.toUpperCase() !== 'XRP') {
@@ -99,43 +96,43 @@ angular.module('helloWorldPaymentsApp')
       }
       
       // prepare payment and find viable paths
-      $http.get(pathURL).
-        success(function(data) {
-          path = data.payments[0];
+      $http.get(pathURL)
+        .then(function(response) {
+          console.log('response?', response);
+          path = response.data.payments[0];
 
           // generate UUID for transaction ID, unique for every transaction
-          $http.get(uuidURL).
-            success(function(data) {
-              uuid = data.uuid;
-              sendData = {
-                client_resource_id: uuid,
-                secret: $scope.rippleSecret,
-                payment: path
-              };
-              
-              // send payment
-              $http.post(sendURL, sendData).
-                success(function() {
+          return $http.get(uuidURL);
+        })
+        .then(function(response) {
+          uuid = response.data.uuid;
+          sendData = {
+            client_resource_id: uuid,
+            secret: $scope.rippleSecret,
+            payment: path
+          };
+          
+          // send payment
+          return $http.post(sendURL, sendData);
+        })
+        .then(function(response) {
+          message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
 
-                  // confirm payment
-                  // $http.get(confirmURL + uuid).
-                  //   success(function(data, status, headers, config) {
-                  //     console.log('SUCCESS!', data);
-                  //   }).
-                  //   error(function(data) {
-                  //     $scope.paymentErrorMessage = data.message;
-                  // });
-                }).
-                error(function(data) {
-                  $scope.paymentErrorMessage = data.message;
-                });
-            }).
-            error(function(data) {
-              $scope.paymentErrorMessage = data.message;
-            });
-      }).
-      error(function(data) {
-        $scope.paymentErrorMessage = data.message;
-      });
+          $scope.paymentSuccessMessage = message.join(' ');
+        //   //confirm payment
+        //   return $http.get(confirmURL + uuid);
+        })
+        // .then(function(response) {
+        //   console.log('SUCCESS!', response.data);
+        // })
+        .catch(function(error) {
+          $scope.paymentErrorMessage = error.data.message;
+        })
+        .finally(function() {
+          $scope.rippleSecret = '';
+          $scope.payment.amount = '';
+          $scope.payment.currency = '';
+          $scope.payment.destination_account = '';
+        });
     };
   }]);
