@@ -115,6 +115,7 @@
         <tr>
           <th>Date</th>
           <th>Source Address</th>
+          <th>Direction</th>
           <th>Currency</th>
           <th>Amount</th>
           <th>Issuer</th>
@@ -125,9 +126,10 @@
         <tr ng-repeat="transaction in transactions">
           <td>{{ transaction.payment.timestamp }}</td>
           <td>{{ transaction.payment.source_account }}</td>
-          <td>{{ transaction.payment.destination_amount.currency }}</td>
-          <td>{{ transaction.payment.destination_amount.value }}</td>
-          <td>{{ transaction.payment.destination_amount.issuer }}</td>
+          <td>{{ transaction.payment.direction }}</td>
+          <td>{{ transaction.payment.source_amount.currency }}</td>
+          <td>{{ transaction.payment.source_amount.value }}</td>
+          <td>{{ transaction.payment.source_amount.issuer }}</td>
           <td>{{ transaction.payment.state }}</td>
         </tr>
       </tbody>

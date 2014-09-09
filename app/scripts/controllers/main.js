@@ -80,6 +80,7 @@ angular.module('helloWorldPaymentsApp')
           }
         })
         .then(function(response) {
+          console.log('payments', response);
           if (!response.data.success) {
             return $q.reject(response.data);
           } else {
