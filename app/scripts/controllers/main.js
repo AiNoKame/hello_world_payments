@@ -38,12 +38,11 @@ angular.module('helloWorldPaymentsApp')
       localStorageService.set('rippleAddress', newAddress);
     });
 
-    // ng-show conditionals
+    // ng-show conditional
     $scope.started = false;
-    $scope.preparing = true;
-    $scope.pathChoosing = false;
-    $scope.sending = false;
-    $scope.confirming = false;
+
+    // ng-switch state
+    $scope.moneyTransferFlowState = 'preparing'
 
     $scope.startErrorMessage = '';
     $scope.preparePaymentErrorMessage = '';
@@ -55,16 +54,16 @@ angular.module('helloWorldPaymentsApp')
     $scope.balances = [];
     $scope.transactions = [];
 
-    $scope.paths = [];
 
     // required for payment submission POST
     var uuid, path, sendData;
-    $scope.rippleSecret = '';
     $scope.payment = {
       amount: '',
       currency: '',
-      destination_account: ''
+      destination_account: '',
+      rippleSecret: ''
     };
+    $scope.paths = [];
 
     // will not start unless account has balances and transactions
     $scope.start = function() {
@@ -100,10 +99,10 @@ angular.module('helloWorldPaymentsApp')
       // prepare payment and find viable paths
       $http.get(pathUrl)
         .success(function(data) {
+          console.log(data);
           $scope.preparePaymentErrorMessage = '';
           $scope.paths = data.payments;
-          $scope.preparing = false;
-          $scope.pathChoosing = true;
+          $scope.moneyTransferFlowState = 'pathChoosing';
         })
         .error(function(data) {
           $scope.preparePaymentErrorMessage = data.message || data;
@@ -112,8 +111,7 @@ angular.module('helloWorldPaymentsApp')
 
     $scope.choosePath = function(index) {
       path = $scope.paths[index];
-      $scope.pathChoosing = false;
-      $scope.sending = true;
+      $scope.moneyTransferFlowState = 'sending';
     };
 
     $scope.sendPayment = function() {
@@ -127,7 +125,7 @@ angular.module('helloWorldPaymentsApp')
 
           sendData = {
             client_resource_id: uuid,
-            secret: $scope.rippleSecret,
+            secret: $scope.payment.rippleSecret,
             payment: path
           };
           
@@ -139,8 +137,7 @@ angular.module('helloWorldPaymentsApp')
           
           $scope.sendPaymentErrorMessage = '';
           $scope.sendPaymentSuccessMessage = message.join(' ');
-          $scope.sending = false;
-          $scope.confirming = true;
+          $scope.moneyTransferFlowState = 'confirming';
 
           // TODO - Update balances and transactions tables after sending confirmation
         })
@@ -151,16 +148,17 @@ angular.module('helloWorldPaymentsApp')
 
     $scope.confirmPayment = function() {
       var confirmUrl = baseUrl + '/payments/' + uuid;
-      console.log(confirmUrl);
 
       $http.get(confirmUrl)
         .success(function(data) {
           $scope.validatePaymentSuccessMessage = 'Successfully validated';
 
           setTimeout(function() {
-            $scope.confirming = false;
-            $scope.preparing = true;
-          }, 3000);
+            $scope.$apply(function() {
+              $scope.validatePaymentSuccessMessage = '';
+              $scope.moneyTransferFlowState = 'preparing';
+            });
+          }.bind(this), 3000);
         })
         .error(function(data) {
           $scope.validatePaymentErrorMessage = data.message || data;
