@@ -20,8 +20,8 @@
   <!-- Account Information Panel -->
   <div ng-show="started">
 
-    <!-- Send Money (amount, currency, destination ripple wallet address) -->
-    <form class="form-inline" ng-submit="sendPayment()">
+    <!-- Send Money - flow 1/3, preparation (amount, currency, destination ripple wallet address) -->
+    <form ng-show="preparing" class="form-inline" ng-submit="preparePayment()">
       <div class="form-group">
         <label>I want to send</label>
         <input type="text" ng-model="payment.amount" autofocus="true" placeholder="0.0001" class="form-control" required>
@@ -39,11 +39,26 @@
         <label>My secret is</label>
         <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control" required>
       </div>
-      <button type="submit" class="btn btn-primary">Send</button>
+      <button type="submit" class="btn btn-primary">Prepare</button>
       <div class="form-group">
         <p ng-model=paymentSuccessMessage class="text-success">{{ paymentSuccessMessage }}</p>
         <p ng-model=paymentErrorMessage class="text-danger">{{ paymentErrorMessage }}</p>
       </div>
+    </form>
+
+    <!-- Send money - flow 2/3, choose payment path -->
+    <form ng-show="pathChoosing" class="form-inline" ng-submit="choosePath()">
+      <div class="btn-group">
+        <button type="button" class="btn btn-default">Path 1</button>
+        <button type="button" class="btn btn-default">Path 2</button>
+        <button type="button" class="btn btn-default">Path 3</button>
+      </div>
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+
+    <!-- Send money - flow 3/3, payment validation -->
+    <form ng-show="confirming" class="form-inline" ng-submit="confirmPayment()">
+      <button type="submit" class="btn btn-info">Check Validation</button>
     </form>
 
     <!-- Wallet Address -->

@@ -38,8 +38,11 @@ angular.module('helloWorldPaymentsApp')
       localStorageService.set('rippleAddress', newAddress);
     });
 
-    // ng-show conditional to split start prompt and wallet info
+    // ng-show conditionals
     $scope.started = false;
+    $scope.preparing = true;
+    $scope.pathChoosing = true;
+    $scope.confirming = true;
 
     $scope.startErrorMessage = '';
     $scope.paymentErrorMessage = '';
@@ -79,7 +82,7 @@ angular.module('helloWorldPaymentsApp')
     };
 
     // one shot volley to prepare, send, and confirm payment
-    $scope.sendPayment = function() {
+    $scope.preparePayment = function() {
       var uuid, message, path, sendData;
       var pathURL = baseURL + '/payments/paths/' + $scope.payment.destination_account + 
                     '/' + $scope.payment.amount + '+' + $scope.payment.currency;
@@ -98,7 +101,7 @@ angular.module('helloWorldPaymentsApp')
       // prepare payment and find viable paths
       $http.get(pathURL)
         .then(function(response) {
-          console.log('response?', response);
+          console.log('===========PATHS===========', response.data);
           path = response.data.payments[0];
 
           // generate UUID for transaction ID, unique for every transaction
@@ -117,16 +120,18 @@ angular.module('helloWorldPaymentsApp')
         })
         .then(function(response) {
           message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
-
           $scope.paymentSuccessMessage = message.join(' ');
+
+          // TODO - Update balances and transactions tables after sending confirmation
+          
         //   //confirm payment
         //   return $http.get(confirmURL + uuid);
         })
         // .then(function(response) {
-        //   console.log('SUCCESS!', response.data);
+        //   console.log('Validated!', response.data);
         // })
         .catch(function(error) {
-          $scope.paymentErrorMessage = error.data.message;
+          $scope.paymentErrorMessage = error.data.message || error;
         })
         .finally(function() {
           $scope.rippleSecret = '';
@@ -135,4 +140,8 @@ angular.module('helloWorldPaymentsApp')
           $scope.payment.destination_account = '';
         });
     };
+
+    $scope.choosePath = function() {};
+
+    $scope.confirmPayment = function() {};
   }]);
