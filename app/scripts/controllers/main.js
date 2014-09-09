@@ -72,7 +72,7 @@ angular.module('helloWorldPaymentsApp')
       $http.get(baseUrl + '/balances')
         .then(function(response) {
           if (!response.data.success) {
-            return $q.reject(response.data);
+            return $q.reject(response);
           } else {
             $scope.balances = response.data.balances;
             
@@ -82,7 +82,7 @@ angular.module('helloWorldPaymentsApp')
         .then(function(response) {
           console.log('payments', response);
           if (!response.data.success) {
-            return $q.reject(response.data);
+            return $q.reject(response);
           } else {
             $scope.started = true;
             $scope.startErrorMessage = '';
@@ -90,7 +90,7 @@ angular.module('helloWorldPaymentsApp')
           }
         })
         .catch(function(error) {
-          $scope.startErrorMessage = error.message || error;
+          $scope.startErrorMessage = error.data.message || error;
           $scope.rippleAddress = '';
         });
     };
@@ -115,7 +115,7 @@ angular.module('helloWorldPaymentsApp')
       $http.get(pathUrl)
         .then(function(response) {
           if (!response.data.success) {
-            return $q.reject(response.data)
+            return $q.reject(response)
           } else {
             $scope.preparePaymentErrorMessage = '';
             $scope.paths = response.data.payments;
@@ -123,7 +123,7 @@ angular.module('helloWorldPaymentsApp')
           }
         })
         .catch(function(error) {
-          $scope.preparePaymentErrorMessage = error.message || error;
+          $scope.preparePaymentErrorMessage = error.data.message || error;
         });
     };
 
@@ -149,7 +149,7 @@ angular.module('helloWorldPaymentsApp')
       $http.get(uuidUrl)
         .then(function(response) {
           if (!response.data.success) {
-            return $q.reject(response.data);
+            return $q.reject(response);
           } else {
             uuid = response.data.uuid;
 
@@ -169,7 +169,7 @@ angular.module('helloWorldPaymentsApp')
         .then(function(response) {
           console.log('response', response);
           if (!response.data.success) {
-            return $q.reject(response.data);
+            return $q.reject(response);
           } else {
             var message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
             
@@ -181,7 +181,7 @@ angular.module('helloWorldPaymentsApp')
           }
         })
         .catch(function(error) {
-          $scope.sendPaymentErrorMessage = error.message || error;
+          $scope.sendPaymentErrorMessage = error.data.message || error;
         });
     };
 
@@ -191,7 +191,7 @@ angular.module('helloWorldPaymentsApp')
       $http.get(confirmUrl)
         .then(function(response) {
           if (!response.data.success) {
-            return $q.reject(response.data);
+            return $q.reject(response);
           } else {
             $scope.validatePaymentSuccessMessage = 'Successfully validated';
 
@@ -203,8 +203,8 @@ angular.module('helloWorldPaymentsApp')
             }.bind(this), 3000);
           }
         })
-        .catch(function(response) {
-          $scope.validatePaymentErrorMessage = response.data.message || response.data;
+        .catch(function(error) {
+          $scope.validatePaymentErrorMessage = error.data.message || error.data;
         });
     };
   }])
