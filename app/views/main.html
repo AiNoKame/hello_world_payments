@@ -20,45 +20,53 @@
   <!-- Account Information Panel -->
   <div ng-show="started">
 
-    <!-- Send Money - flow 1/3, preparation (amount, currency, destination ripple wallet address) -->
+    <!-- Send Money - flow 1/4, preparation (amount, currency, destination ripple wallet address) -->
     <form ng-show="preparing" class="form-inline" ng-submit="preparePayment()">
       <div class="form-group">
         <label>I want to send</label>
         <input type="text" ng-model="payment.amount" autofocus="true" placeholder="0.0001" class="form-control" required>
-      </div>
-      <div class="form-group">
         <input type="text" ng-model="payment.currency" placeholder="XRP" class="form-control" required>
-      </div>
-      <div class="form-group">
         <label>to</label>
         <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control" required>
+        <button type="submit" class="btn btn-primary">Prepare</button>
+        <p ng-model=preparePaymentErrorMessage class="text-danger">{{ preparePaymentErrorMessage }}</p>
       </div>
-      <br />
-      <br />
+    </form>
+
+    <!-- Send money - flow 2/4, choose payment path -->
+    <div class="btn-group-vertical" ng-repeat="path in paths" ng-show="pathChoosing">
+      <button type="button" class="btn btn-primary" ng-click="choosePath($index)">
+        Use {{ path.source_amount.value }} {{ path.source_amount.currency }}
+      </button>
+    </div>
+
+    <!-- Send money - flow 3/4, send payment (with secret) -->
+    <form ng-show="sending" class="form-inline" ng-submit="sendPayment()">
       <div class="form-group">
         <label>My secret is</label>
-        <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-primary">Prepare</button>
-      <div class="form-group">
-        <p ng-model=paymentSuccessMessage class="text-success">{{ paymentSuccessMessage }}</p>
-        <p ng-model=paymentErrorMessage class="text-danger">{{ paymentErrorMessage }}</p>
+        <div class="input-group">
+          <input type="text" ng-model="rippleSecret" placeholder="?" class="form-control" required>
+          <span class="input-group-btn" required>
+            <button type="submit" class="btn btn-primary">Send</button>
+          </span>
+        </div>
+        <p ng-model=sendPaymentErrorMessage class="text-danger">{{ sendPaymentErrorMessage }}</p>
       </div>
     </form>
 
-    <!-- Send money - flow 2/3, choose payment path -->
-    <form ng-show="pathChoosing" class="form-inline" ng-submit="choosePath()">
-      <div class="btn-group">
-        <button type="button" class="btn btn-default">Path 1</button>
-        <button type="button" class="btn btn-default">Path 2</button>
-        <button type="button" class="btn btn-default">Path 3</button>
-      </div>
-      <button type="submit" class="btn btn-primary">Send</button>
-    </form>
-
-    <!-- Send money - flow 3/3, payment validation -->
+    <!-- Send money - flow 4/4, payment validation -->
     <form ng-show="confirming" class="form-inline" ng-submit="confirmPayment()">
-      <button type="submit" class="btn btn-info">Check Validation</button>
+      <div class="form-group">
+        <p ng-model=preparePaymentSuccessMessage class="text-success">
+          {{ sendPaymentSuccessMessage }}
+        </p>
+        <button type="submit" class="btn btn-info">
+          Check Validation
+        </button>
+        <span>
+          {{ validatePaymentSuccessMessage }}{{ validatePaymentErrorMessage }}
+        </span>
+      </div>
     </form>
 
     <!-- Wallet Address -->

@@ -41,17 +41,24 @@ angular.module('helloWorldPaymentsApp')
     // ng-show conditionals
     $scope.started = false;
     $scope.preparing = true;
-    $scope.pathChoosing = true;
-    $scope.confirming = true;
+    $scope.pathChoosing = false;
+    $scope.sending = false;
+    $scope.confirming = false;
 
     $scope.startErrorMessage = '';
-    $scope.paymentErrorMessage = '';
-    $scope.paymentSuccessMessage = '';
+    $scope.preparePaymentErrorMessage = '';
+    $scope.sendPaymentErrorMessage = '';
+    $scope.sendPaymentSuccessMessage = '';
+    $scope.validatePaymentErrorMessage = '';
+    $scope.validatePaymentSuccessMessage = '';
 
     $scope.balances = [];
     $scope.transactions = [];
 
+    $scope.paths = [];
+
     // required for payment submission POST
+    var uuid, path, sendData;
     $scope.rippleSecret = '';
     $scope.payment = {
       amount: '',
@@ -65,7 +72,6 @@ angular.module('helloWorldPaymentsApp')
 
       $http.get(baseURL + '/balances')
         .then(function(response) {
-
           $scope.balances = response.data.balances;
           
           return $http.get(baseURL + '/payments');
@@ -83,15 +89,8 @@ angular.module('helloWorldPaymentsApp')
 
     // one shot volley to prepare, send, and confirm payment
     $scope.preparePayment = function() {
-      var uuid, message, path, sendData;
       var pathURL = baseURL + '/payments/paths/' + $scope.payment.destination_account + 
                     '/' + $scope.payment.amount + '+' + $scope.payment.currency;
-      var uuidURL = socketAddress + '/uuid';
-      var sendURL = socketAddress + '/payments';
-      var confirmURL = baseURL + '/payments/'; // append hash or uuid/client_resource_id
-
-      $scope.paymentSuccessMessage = '';
-      $scope.paymentErrorMessage = '';
 
       // add issuer if currency is not XRP
       if ($scope.payment.currency.toUpperCase() !== 'XRP') {
@@ -100,15 +99,32 @@ angular.module('helloWorldPaymentsApp')
       
       // prepare payment and find viable paths
       $http.get(pathURL)
-        .then(function(response) {
-          console.log('===========PATHS===========', response.data);
-          path = response.data.payments[0];
-
-          // generate UUID for transaction ID, unique for every transaction
-          return $http.get(uuidURL);
+        .success(function(data) {
+          $scope.preparePaymentErrorMessage = '';
+          $scope.paths = data.payments;
+          $scope.preparing = false;
+          $scope.pathChoosing = true;
         })
+        .error(function(data) {
+          $scope.preparePaymentErrorMessage = data.message || data;
+        });
+    };
+
+    $scope.choosePath = function(index) {
+      path = $scope.paths[index];
+      $scope.pathChoosing = false;
+      $scope.sending = true;
+    };
+
+    $scope.sendPayment = function() {
+      var uuidURL = socketAddress + '/uuid';
+      var sendURL = socketAddress + '/payments';
+
+      // generate UUID for transaction ID, unique for every transaction
+      $http.get(uuidURL)
         .then(function(response) {
           uuid = response.data.uuid;
+
           sendData = {
             client_resource_id: uuid,
             secret: $scope.rippleSecret,
@@ -119,29 +135,39 @@ angular.module('helloWorldPaymentsApp')
           return $http.post(sendURL, sendData);
         })
         .then(function(response) {
-          message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
-          $scope.paymentSuccessMessage = message.join(' ');
+          var message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
+          
+          $scope.sendPaymentErrorMessage = '';
+          $scope.sendPaymentSuccessMessage = message.join(' ');
+          console.log($scope.sendPaymentSuccessMessage);
+          $scope.sending = false;
+          $scope.confirming = true;
 
           // TODO - Update balances and transactions tables after sending confirmation
-          
-        //   //confirm payment
-        //   return $http.get(confirmURL + uuid);
         })
-        // .then(function(response) {
-        //   console.log('Validated!', response.data);
-        // })
-        .catch(function(error) {
-          $scope.paymentErrorMessage = error.data.message || error;
-        })
-        .finally(function() {
-          $scope.rippleSecret = '';
-          $scope.payment.amount = '';
-          $scope.payment.currency = '';
-          $scope.payment.destination_account = '';
+        .catch(function(response) {
+          $scope.sendPaymentErrorMessage = response.data.message || response.data;
         });
     };
 
-    $scope.choosePath = function() {};
+    $scope.confirmPayment = function() {
+      var confirmURL = baseURL + '/payments/' + uuid;
 
-    $scope.confirmPayment = function() {};
+      //confirm payment
+      $http.get(confirmURL + uuid)
+        .success(function(data) {
+          console.log('Validated!', data);
+          $scope.validatePaymentSuccessMessage = 'Successfully validated';
+
+          setTimeout(function() {
+            $scope.confirming = false;
+            $scope.preparing = true;
+          }, 3000);
+        })
+        .error(function(data) {
+          console.log('Error', data);
+
+          $scope.validatePaymentErrorMessage = data.message;
+        });
+    };
   }]);
