@@ -13,7 +13,7 @@ angular.module('helloWorldPaymentsApp')
     var hostname = 'http://localhost',
         port = '5990',
         socketAddress = hostname + ':' + port + '/v1',
-        baseURL;
+        baseUrl;
     
     var issuer = {
       'AUD': 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B', // BitStamp
@@ -68,13 +68,13 @@ angular.module('helloWorldPaymentsApp')
 
     // will not start unless account has balances and transactions
     $scope.start = function() {
-      baseURL = socketAddress + '/accounts/' + $scope.rippleAddress;
+      baseUrl = socketAddress + '/accounts/' + $scope.rippleAddress;
 
-      $http.get(baseURL + '/balances')
+      $http.get(baseUrl + '/balances')
         .then(function(response) {
           $scope.balances = response.data.balances;
           
-          return $http.get(baseURL + '/payments');
+          return $http.get(baseUrl + '/payments');
         })
         .then(function(response) {
           $scope.started = true;
@@ -87,18 +87,18 @@ angular.module('helloWorldPaymentsApp')
         });
     };
 
-    // one shot volley to prepare, send, and confirm payment
+    // set up payment process and find valid payment paths
     $scope.preparePayment = function() {
-      var pathURL = baseURL + '/payments/paths/' + $scope.payment.destination_account + 
+      var pathUrl = baseUrl + '/payments/paths/' + $scope.payment.destination_account + 
                     '/' + $scope.payment.amount + '+' + $scope.payment.currency;
 
       // add issuer if currency is not XRP
       if ($scope.payment.currency.toUpperCase() !== 'XRP') {
-        pathURL += '+' + issuer[$scope.payment.currency];
+        pathUrl += '+' + issuer[$scope.payment.currency];
       }
       
       // prepare payment and find viable paths
-      $http.get(pathURL)
+      $http.get(pathUrl)
         .success(function(data) {
           $scope.preparePaymentErrorMessage = '';
           $scope.paths = data.payments;
@@ -117,11 +117,11 @@ angular.module('helloWorldPaymentsApp')
     };
 
     $scope.sendPayment = function() {
-      var uuidURL = socketAddress + '/uuid';
-      var sendURL = socketAddress + '/payments';
+      var uuidUrl = socketAddress + '/uuid';
+      var sendUrl = socketAddress + '/payments';
 
       // generate UUID for transaction ID, unique for every transaction
-      $http.get(uuidURL)
+      $http.get(uuidUrl)
         .then(function(response) {
           uuid = response.data.uuid;
 
@@ -132,14 +132,13 @@ angular.module('helloWorldPaymentsApp')
           };
           
           // send payment
-          return $http.post(sendURL, sendData);
+          return $http.post(sendUrl, sendData);
         })
         .then(function(response) {
           var message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
           
           $scope.sendPaymentErrorMessage = '';
           $scope.sendPaymentSuccessMessage = message.join(' ');
-          console.log($scope.sendPaymentSuccessMessage);
           $scope.sending = false;
           $scope.confirming = true;
 
@@ -151,12 +150,11 @@ angular.module('helloWorldPaymentsApp')
     };
 
     $scope.confirmPayment = function() {
-      var confirmURL = baseURL + '/payments/' + uuid;
+      var confirmUrl = baseUrl + '/payments/' + uuid;
+      console.log(confirmUrl);
 
-      //confirm payment
-      $http.get(confirmURL + uuid)
+      $http.get(confirmUrl)
         .success(function(data) {
-          console.log('Validated!', data);
           $scope.validatePaymentSuccessMessage = 'Successfully validated';
 
           setTimeout(function() {
@@ -165,9 +163,7 @@ angular.module('helloWorldPaymentsApp')
           }, 3000);
         })
         .error(function(data) {
-          console.log('Error', data);
-
-          $scope.validatePaymentErrorMessage = data.message;
+          $scope.validatePaymentErrorMessage = data.message || data;
         });
     };
   }]);
