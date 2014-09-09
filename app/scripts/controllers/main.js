@@ -94,6 +94,11 @@ angular.module('helloWorldPaymentsApp')
         });
     };
 
+    // start over payment process
+    $scope.cancel = function() {
+      $scope.moneyTransferFlowState = 'preparing';
+    };
+
     // set up payment process and find valid payment paths
     $scope.preparePayment = function() {
       var pathUrl = baseUrl + '/payments/paths/' + $scope.payment.destination_account + 
@@ -153,11 +158,15 @@ angular.module('helloWorldPaymentsApp')
               payment: path
             };
             
+            console.log('payment url', sendUrl);
+            console.log('object', sendData);
+            console.log('json', JSON.stringify(sendData));
             // send payment
             return $http.post(sendUrl, sendData);
           }
         })
         .then(function(response) {
+          console.log('response', response);
           if (!response.data.success) {
             return $q.reject(response.data);
           } else {
