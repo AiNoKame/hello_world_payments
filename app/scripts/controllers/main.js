@@ -12,7 +12,7 @@ angular.module('helloWorldPaymentsApp')
     function ($scope, $http, $q, localStorageService, RippleRest) {
     var hostname = 'http://localhost',
         port = '5990',
-        socketAddress = hostname + ':' + port + '/v1',
+        socketAddress = hostname + ':' + port,
         baseUrl;
     
     var issuer = {
@@ -54,7 +54,6 @@ angular.module('helloWorldPaymentsApp')
     $scope.balances = [];
     $scope.transactions = [];
 
-
     // required for payment submission POST
     var uuid, path, sendData;
     $scope.payment = {
@@ -67,7 +66,7 @@ angular.module('helloWorldPaymentsApp')
 
     // will not start unless account has balances and transactions
     $scope.start = function() {
-      baseUrl = socketAddress + '/accounts/' + $scope.rippleAddress;
+      baseUrl = socketAddress + '/v1/accounts/' + $scope.rippleAddress;
 
       $http.get(baseUrl + '/balances')
         .then(function(response) {
@@ -80,7 +79,6 @@ angular.module('helloWorldPaymentsApp')
           }
         })
         .then(function(response) {
-          console.log('payments', response);
           if (!response.data.success) {
             return $q.reject(response);
           } else {
@@ -97,6 +95,12 @@ angular.module('helloWorldPaymentsApp')
 
     // start over payment process
     $scope.cancel = function() {
+      $scope.startErrorMessage = '';
+      $scope.preparePaymentErrorMessage = '';
+      $scope.sendPaymentErrorMessage = '';
+      $scope.sendPaymentSuccessMessage = '';
+      $scope.validatePaymentErrorMessage = '';
+      $scope.validatePaymentSuccessMessage = '';
       $scope.moneyTransferFlowState = 'preparing';
     };
 
@@ -159,15 +163,11 @@ angular.module('helloWorldPaymentsApp')
               payment: path
             };
             
-            console.log('payment url', sendUrl);
-            console.log('object', sendData);
-            console.log('json', JSON.stringify(sendData));
             // send payment
             return $http.post(sendUrl, sendData);
           }
         })
         .then(function(response) {
-          console.log('response', response);
           if (!response.data.success) {
             return $q.reject(response);
           } else {
@@ -208,8 +208,52 @@ angular.module('helloWorldPaymentsApp')
         });
     };
   }])
-  .factory('RippleRest', function RippleRest($http) {
+  .factory('RippleRest', function RippleRest($http, $q) {
     var rippleRest = {};
+
+    rippleRest._get = function(baseUrl, paths) {
+      return $http.get(baseUrl + paths.join(''))
+        .then(function(response) {
+          if (response.data.success) {
+            return response.data;
+          } else {
+            return $q.reject(response.data);
+          }
+        })
+        .catch(function(error) {
+          return $q.reject(error.data);
+        });
+    };
+
+    rippleRest.getBalances = function(baseUrl) {
+      return this._get(baseUrl, ['/balances']);
+    };
+
+    rippleRest.getTransactions = function(baseUrl) {
+      return this._get(baseUrl, ['/payments']);
+    };
+
+    rippleRest.preparePayment = function(baseUrl, destinationAccount, destinationAmount) {
+      return this._get(baseUrl, ['/payments/paths/', destinationAccount, '/', destinationAmount]);
+    };
+
+    rippleRest.confirmPayment = function(baseUrl, hash) {
+      return this._get(baseUrl, ['/payments/', hash]);
+    };
+
+    rippleRest.submitPayment = function(server, paymentObj, secret, hash) {
+      return $http.post(server + '/v1/payments', {paymentObj: payment, secret: secret, hash: hash})
+        .then(function(response) {
+          if (response.data.success) {
+            return response.data;
+          } else {
+            return $q.reject(response.data);
+          }
+        })
+        .catch(function(error) {
+          return $q.reject(error.data);
+        });
+    };
 
     return rippleRest;
   });
