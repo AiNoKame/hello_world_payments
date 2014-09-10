@@ -3,15 +3,12 @@
   <!-- Ripple Address Input -->
   <div ng-show="!started">
     <form role="form" ng-submit="start()">
-      <div class="row">
-        <h2 class="text-primary">What is your ripple address?</h2>
-        <div class="input-group">
-          <input type="text" ng-model="rippleAddress" autofocus="true" 
-            placeholder="Example: r123456789abcdefghijklmnopqrstuvwxyz" class="form-control" required>
-          <span class="input-group-btn" required>
-            <input type="submit" class="btn btn-primary" value="Start">
-          </span>
-        </div>
+      <h2 class="text-primary">What is your ripple address?</h2>
+      <div class="input-group">
+        <input type="text" ng-model="rippleAddress" placeholder="Example: r123456789abcdefg" class="form-control" required>
+        <span class="input-group-btn" required>
+          <input type="submit" class="btn btn-primary" value="Start">
+        </span>
       </div>
     </form>
   </div>
