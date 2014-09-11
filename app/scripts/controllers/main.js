@@ -52,7 +52,7 @@ angular.module('helloWorldPaymentsApp')
       $scope.validatePaymentSuccessMessage = '';
 
       // ng-switch state
-      $scope.moneyTransferFlowState = 'preparing'
+      $scope.moneyTransferFlowState = 'preparing';
     };
 
     $scope.cancel();
@@ -68,10 +68,13 @@ angular.module('helloWorldPaymentsApp')
           return RippleRest.getTransactions(baseUrl);
         })
         .then(function(response) {
-          console.log(response);
+          var payments = response.payments;
+
           $scope.started = true;
           $scope.startErrorMessage = '';
-          $scope.transactions = response.payments;
+          $scope.transactions = payments; // NO, do this after getPreviousNotifications
+
+          return RippleRest.getPreviousNotifications(baseUrl, payments[payments.length - 1].payment.hash);
         })
         .catch(function(error) {
           $scope.startErrorMessage = error.message || error;
@@ -112,7 +115,7 @@ angular.module('helloWorldPaymentsApp')
         .then(function(response) {
           return RippleRest.submitPayment(socketAddress, paymentOption, $scope.payment.rippleSecret, response.uuid);
         })
-        .then(function(response) {
+        .then(function() {
           var message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
 
           $scope.sendPaymentErrorMessage = '';
@@ -146,7 +149,47 @@ angular.module('helloWorldPaymentsApp')
     };
   }])
 
-  .factory('RippleRest', function RippleRest($http, $q) {
+  .factory('Notification', function Notification() {
+    function Notification(data) {
+      this.data = data;
+    }
+
+    Notification.prototype.getNextUrl = function() {
+      return this.data.next_notification_url;
+    };
+
+    Notification.prototype.getPrevUrl = function() {
+      return this.data.previous_notification_url;
+    };
+
+    Notification.prototype.isFirst = function() {
+      return this.data.next_notification_url === '';
+    };
+
+    Notification.prototype.isLast = function() {
+      return this.data.previous_notification_url === '';
+    };
+
+    Notification.prototype.isOutgoing = function() {
+      return this.data.direction === 'outgoing';
+    };
+
+    Notification.prototype.isIncoming = function() {
+      return this.data.direction === 'incoming';
+    };
+
+    Notification.prototype.isValidated = function() {
+      return this.data.state === 'validated';
+    };
+
+    Notification.prototype.isSuccess = function() {
+      return this.data.result === 'tesSUCCESS';
+    };
+
+    return Notification;
+  })
+
+  .factory('RippleRest', function RippleRest($http, $q, Notification) {
     var rippleRest = {};
 
     rippleRest.issuerAddress = {
@@ -164,6 +207,7 @@ angular.module('helloWorldPaymentsApp')
       'USD': 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B', // BitStamp
     };
 
+    // to handle error catching in response when success is false and make cleaner looking GET calls for various endpoints
     rippleRest._get = function(baseUrl, paymentOptions) {
       return $http.get(baseUrl + paymentOptions.join(''))
         .then(function(response) {
@@ -178,8 +222,22 @@ angular.module('helloWorldPaymentsApp')
         });
     };
 
-    rippleRest.getNotifications = function(baseUrl, hash) {
-      return this._get(baseUrl + '/notifications/' + hash);
+    rippleRest.getNewNotificaionts = function(baseUrl, hash) {
+      return this._get(baseUrl, ['/notifications/', hash]);
+    };
+
+    rippleRest.getPreviousNotifications = function(baseUrl, hash) {
+      return this._get(baseUrl, ['/notifications/', hash])
+        .then(function(response) {
+          var notifications = [];
+          var notification = new Notification(response.notification);
+
+          console.log('getPreviousNotifications response', response);
+          console.log(notification);
+
+          while(false) {
+          }
+        });
     };
 
     rippleRest.getUUID = function(serverUrl) {
