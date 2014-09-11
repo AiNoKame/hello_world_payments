@@ -71,8 +71,11 @@
             <button type="submit" class="btn btn-info">
               Check Validation
             </button>
-            <span>
-              {{ validatePaymentSuccessMessage }}{{ validatePaymentErrorMessage }}
+            <span class="text-success">
+              {{ validatePaymentSuccessMessage }}
+            </span>
+            <span class="text-failure">
+              {{ validatePaymentErrorMessage }}
             </span>
           </div>
         </form>
