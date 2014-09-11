@@ -19,7 +19,7 @@
 
     <!-- Money Transfer Panel -->
     <div ng-switch="moneyTransferFlowState">
-      
+
       <!-- Send Payment Flow, step 1/4, preparation (set amount, currency, destination ripple wallet address) -->
       <div ng-switch-when="preparing">
         <form class="form-inline" ng-submit="preparePayment()">
@@ -29,18 +29,18 @@
             <input type="text" ng-model="payment.currency" placeholder="XRP" class="form-control" required>
             <label>to</label>
             <input type="text" ng-model="payment.destination_account" placeholder="ripple address" class="form-control" required>
-            <button type="submit" class="btn btn-primary">Prepare</button>
+            <button type="submit" class="btn btn-primary">Choose Payment Option</button>
             <p ng-model=preparePaymentErrorMessage class="text-danger">{{ preparePaymentErrorMessage }}</p>
           </div>
         </form>
       </div>
 
-      <!-- Send Payment Flow, step 2/4, choose payment path -->
-      <div ng-switch-when="pathChoosing">
+      <!-- Send Payment Flow, step 2/4, choose payment payment ption -->
+      <div ng-switch-when="paymentOptionChoosing">
         <label>I want to pay with</label>
-        <div ng-repeat="path in paths" >
-          <button type="button" class="btn btn-primary" ng-click="choosePath($index)">
-            {{ path.source_amount.value }} {{ path.source_amount.currency }}
+        <div ng-repeat="paymentOption in paymentOptions" >
+          <button type="button" class="btn btn-primary" ng-click="choosepaymentOption($index)">
+            {{ paymentOption.source_amount.value }} {{ paymentOption.source_amount.currency }}
           </button>
         </div>
       </div>

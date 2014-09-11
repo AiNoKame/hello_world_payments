@@ -8,7 +8,7 @@
  * Controller of the helloWorldPaymentsApp
  */
 angular.module('helloWorldPaymentsApp')
-  .controller('MainCtrl', ['$scope', '$http', '$q', 'localStorageService', 'RippleRest', 
+  .controller('MainCtrl', ['$scope', '$http', '$q', 'localStorageService', 'RippleRest',
     function ($scope, $http, $q, localStorageService, RippleRest) {
     var hostname = 'http://localhost',
         port = '5990',
@@ -32,8 +32,8 @@ angular.module('helloWorldPaymentsApp')
     $scope.transactions = [];
 
     // required for payment submission
-    var uuid, path;
-    $scope.paths = [];
+    var uuid, paymentOption;
+    $scope.paymentOptions = [];
     $scope.payment = {
       amount: '',
       currency: '',
@@ -79,16 +79,16 @@ angular.module('helloWorldPaymentsApp')
         });
     };
 
-    // set up payment process and find valid payment paths for available usable currencies
+    // set up payment process and find valid payment paymentOptions for available usable currencies
     $scope.preparePayment = function() {
-      RippleRest.preparePayment(baseUrl, 
+      RippleRest.preparePayment(baseUrl,
                                 $scope.payment.destination_account,
                                 $scope.payment.amount,
                                 $scope.payment.currency)
         .then(function(response) {
           $scope.preparePaymentErrorMessage = '';
-          $scope.paths = response.payments;
-          $scope.moneyTransferFlowState = 'pathChoosing';
+          $scope.paymentOptions = response.payments;
+          $scope.moneyTransferFlowState = 'paymentOptionChoosing';
         })
         .catch(function(error) {
           $scope.preparePaymentErrorMessage = error.message || error;
@@ -96,11 +96,11 @@ angular.module('helloWorldPaymentsApp')
     };
 
     // choose to fund payment with specified currency
-    $scope.choosePath = function(index) {
-      path = $scope.paths[index];
+    $scope.choosepaymentOption = function(index) {
+      paymentOption = $scope.paymentOptions[index];
 
       // add issuer if currency is not XRP
-      path.source_amount.issuer = RippleRest.issuerAddress[path.source_amount.currency.toUpperCase()];
+      paymentOption.source_amount.issuer = RippleRest.issuerAddress[paymentOption.source_amount.currency.toUpperCase()];
 
       $scope.moneyTransferFlowState = 'sending';
     };
@@ -110,11 +110,11 @@ angular.module('helloWorldPaymentsApp')
       // generate UUID for transaction ID, unique for every transaction
       RippleRest.getUUID(socketAddress)
         .then(function(response) {
-          return RippleRest.submitPayment(socketAddress, path, $scope.payment.rippleSecret, response.uuid);
+          return RippleRest.submitPayment(socketAddress, paymentOption, $scope.payment.rippleSecret, response.uuid);
         })
         .then(function(response) {
           var message = [$scope.payment.amount, $scope.payment.currency, 'successfully sent!'];
-            
+
           $scope.sendPaymentErrorMessage = '';
           $scope.sendPaymentSuccessMessage = message.join(' ');
           $scope.moneyTransferFlowState = 'confirming';
@@ -164,8 +164,8 @@ angular.module('helloWorldPaymentsApp')
       'USD': 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B', // BitStamp
     };
 
-    rippleRest._get = function(baseUrl, paths) {
-      return $http.get(baseUrl + paths.join(''))
+    rippleRest._get = function(baseUrl, paymentOptions) {
+      return $http.get(baseUrl + paymentOptions.join(''))
         .then(function(response) {
           if (response.data.success) {
             return response.data;
@@ -176,6 +176,10 @@ angular.module('helloWorldPaymentsApp')
         .catch(function(error) {
           return $q.reject(error.data);
         });
+    };
+
+    rippleRest.getNotifications = function(baseUrl, hash) {
+      return this._get(baseUrl + '/notifications/' + hash);
     };
 
     rippleRest.getUUID = function(serverUrl) {
@@ -195,7 +199,7 @@ angular.module('helloWorldPaymentsApp')
 
       if (issuer) issuer = '+' + issuer;
 
-      return this._get(baseUrl, ['/payments/paths/', destinationAccount, '/', amount, '+', currency, issuer]);
+      return this._get(baseUrl, ['/payments/paymentOptions/', destinationAccount, '/', amount, '+', currency, issuer]);
     };
 
     rippleRest.submitPayment = function(serverUrl, paymentObj, secret, hash) {
